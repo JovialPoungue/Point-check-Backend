@@ -8,6 +8,8 @@ import dj_database_url
 import os
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
+"""import dj_database_url
+from decouple import config"""
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
@@ -62,6 +64,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# WhiteNoise pour production (Vercel)
+if not DEBUG:
+    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
 ROOT_URLCONF = 'pointcheck.urls'
 
 TEMPLATES = [
@@ -86,13 +92,14 @@ WSGI_APPLICATION = 'pointcheck.wsgi.application'
 # En production : DATABASE_URL (PostgreSQL). En local sans DATABASE_URL : SQLite.
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=env_bool('DB_SSL_REQUIRE', True),
-        )
-    }
+   DATABASES = {
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+
 else:
     DATABASES = {
         'default': {
@@ -192,7 +199,7 @@ LOGGING = {
 
 # --- Sécurité production (activée hors DEBUG) ---
 if not DEBUG:
-    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', True)
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
