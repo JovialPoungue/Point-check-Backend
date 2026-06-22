@@ -1,18 +1,21 @@
-"""URLs principales de PointCheck"""
-from django.contrib import admin
-from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
-from rest_framework_simplejwt.views import TokenRefreshView
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/auth/', include('apps.accounts.urls')),
-    path('api/attendance/', include('apps.attendance.urls')),
-    path('api/reports/', include('apps.reports.urls')),
-    path('api/insights/', include('apps.insights.urls')),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+{
+  "version": 2,
+  "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput",
+  "builds": [
+    {
+      "src": "pointcheck/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "pointcheck/wsgi.py"
+    }
+  ]
+}
