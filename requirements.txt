@@ -1,4 +1,4 @@
-﻿asgiref==3.11.1
+asgiref==3.11.1
 chardet==7.4.3
 colorama==0.4.6
 dj-database-url==3.1.2
