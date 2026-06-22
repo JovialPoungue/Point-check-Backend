@@ -14,6 +14,5 @@ urlpatterns = [
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
-# ✅ Fichiers media en dev, WhiteNoise gère le static en prod automatiquement
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
