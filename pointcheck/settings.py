@@ -117,9 +117,11 @@ LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'Africa/Douala'
 USE_I18N = True
 USE_TZ = True
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
 
 #  AJOUTÉ : WhiteNoise pour les fichiers statiques
-STATIC_URL = 'static/'
+STATIC_URL = 'https://cdn.jsdelivr.net/npm/django-admin-static@1.0.0/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
