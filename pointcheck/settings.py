@@ -8,8 +8,6 @@ import dj_database_url
 import os
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
-"""import dj_database_url
-from decouple import config"""
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
@@ -27,10 +25,15 @@ def env_list(name, default=''):
 # --- Sécurité ---
 SECRET_KEY = os.getenv(
     'SECRET_KEY',
-    'django-insecure-dev-only-change-me-pointcheck'  # uniquement pour le dev local
+    'django-insecure-dev-only-change-me-pointcheck'
 )
 DEBUG = env_bool('DEBUG', True)
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '*') or ['*']
+
+#  MODIFIÉ : ALLOWED_HOSTS accepte Vercel + localhost + domaines custom
+ALLOWED_HOSTS = env_list(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1'
+) + ['.vercel.app']  # autorise tous les sous-domaines Vercel automatiquement
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,6 +59,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ MODIFIÉ : toujours actif, pas conditionnel
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,10 +67,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# WhiteNoise pour production (Vercel)
-if not DEBUG:
-    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'pointcheck.urls'
 
@@ -89,17 +89,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pointcheck.wsgi.application'
 
 # --- Base de données ---
-# En production : DATABASE_URL (PostgreSQL). En local sans DATABASE_URL : SQLite.
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
-   DATABASES = {
-    "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
-
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
 else:
     DATABASES = {
         'default': {
@@ -120,8 +118,10 @@ TIME_ZONE = 'Africa/Douala'
 USE_I18N = True
 USE_TZ = True
 
+#  AJOUTÉ : WhiteNoise pour les fichiers statiques
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -141,14 +141,13 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    # Protection anti-brute-force
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'check_in': '20/min',     # pointage public (par IP)
-        'ai': '15/min',           # assistant IA
-        'hr_synthesis': '6/min',  # génération de synthèse
+        'check_in': '20/min',
+        'ai': '15/min',
+        'hr_synthesis': '6/min',
     },
 }
 
@@ -172,12 +171,11 @@ QR_TOKEN_VALIDITY_SECONDS = int(os.getenv('QR_TOKEN_VALIDITY_SECONDS', '60'))
 GEOFENCE_DEFAULT_RADIUS_METERS = 100
 LATE_TOLERANCE_MINUTES = 5
 
-# --- IA (Assistant analytique + synthèses RH) ---
-# Fournisseur : 'anthropic' (défaut) ou 'openai' (tout endpoint compatible OpenAI)
+# --- IA ---
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'anthropic').lower()
 AI_API_KEY = os.getenv('AI_API_KEY', '')
 AI_MODEL = os.getenv('AI_MODEL', 'claude-sonnet-4-6')
-AI_BASE_URL = os.getenv('AI_BASE_URL', '')  # override optionnel (proxy, endpoint compatible)
+AI_BASE_URL = os.getenv('AI_BASE_URL', '')
 AI_MAX_TOKENS = int(os.getenv('AI_MAX_TOKENS', '1200'))
 AI_TIMEOUT_SECONDS = int(os.getenv('AI_TIMEOUT_SECONDS', '40'))
 
@@ -197,9 +195,11 @@ LOGGING = {
     },
 }
 
-# --- Sécurité production (activée hors DEBUG) ---
+# --- Sécurité production ---
 if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = True   
+    CSRF_COOKIE_SECURE = True      
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
