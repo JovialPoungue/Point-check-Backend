@@ -28,11 +28,12 @@ class CompanySerializer(serializers.ModelSerializer):
 
 class DepartmentSerializer(serializers.ModelSerializer):
     employees_count = serializers.SerializerMethodField()
+    company_name = serializers.CharField(source='company.name', read_only=True)
     
     class Meta:
         model = Department
-        fields = ['id', 'company', 'name', 'description', 'color', 'created_at', 'employees_count']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'company', 'company_name', 'name', 'description', 'color', 'created_at', 'employees_count']
+        read_only_fields = ['id', 'company', 'company_name', 'created_at']
     
     def get_employees_count(self, obj):
         return obj.employees.filter(is_active_employee=True).count()

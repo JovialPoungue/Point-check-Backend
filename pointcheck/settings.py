@@ -94,7 +94,7 @@ if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=0,
             ssl_require=True
         )
     }
@@ -165,6 +165,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://point-check-frontend.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000",
+    "http://192.168.137.11:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + ['X-Frontend-Url']
